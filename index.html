@@ -1,0 +1,1756 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VendorConnect - Street Vendor Marketplace</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            background: rgba(255, 255, 255, 0.98);
+            backdrop-filter: blur(20px);
+            border-radius: 20px;
+            padding: 25px;
+            margin-bottom: 25px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .header h1 {
+            color: #1a1a1a;
+            text-align: center;
+            margin-bottom: 25px;
+            font-size: 3em;
+            font-weight: 800;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: -1px;
+        }
+
+        .auth-section {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .location-info {
+            background: linear-gradient(135deg, #e8f5e8, #d4edda);
+            padding: 12px 20px;
+            border-radius: 30px;
+            font-size: 0.9em;
+            color: #2d5a2d;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            padding: 14px 28px;
+            border-radius: 30px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.95em;
+            transition: all 0.3s ease;
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            text-decoration: none;
+        }
+
+        .btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 15px 35px rgba(102, 126, 234, 0.4);
+        }
+
+        .search-section {
+            background: rgba(255, 255, 255, 0.98);
+            backdrop-filter: blur(20px);
+            border-radius: 20px;
+            padding: 30px;
+            margin-bottom: 25px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .search-container {
+            position: relative;
+            margin-bottom: 20px;
+        }
+
+        .search-box {
+            width: 100%;
+            padding: 18px 55px 18px 20px;
+            border: 2px solid #e5e7eb;
+            border-radius: 50px;
+            font-size: 16px;
+            outline: none;
+            transition: all 0.3s ease;
+            background: #ffffff;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+        }
+
+        .search-box:focus {
+            border-color: #667eea;
+            box-shadow: 0 8px 30px rgba(102, 126, 234, 0.2);
+        }
+
+        .search-icon {
+            position: absolute;
+            right: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #667eea;
+            font-size: 18px;
+        }
+
+        .controls-section {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .filters {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .filter-btn {
+            padding: 10px 20px;
+            border: 2px solid #667eea;
+            background: transparent;
+            color: #667eea;
+            border-radius: 25px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 600;
+            font-size: 0.9em;
+        }
+
+        .filter-btn.active {
+            background: #667eea;
+            color: white;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+        }
+
+        .sorting-controls {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .sort-select {
+            padding: 10px 15px;
+            border: 2px solid #e5e7eb;
+            border-radius: 25px;
+            outline: none;
+            font-weight: 600;
+            background: white;
+            cursor: pointer;
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 420px;
+            gap: 25px;
+            min-height: 600px;
+        }
+
+        .suppliers-list {
+            background: rgba(255, 255, 255, 0.98);
+            backdrop-filter: blur(20px);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            max-height: 85vh;
+            overflow-y: auto;
+        }
+
+        .supplier-card {
+            background: linear-gradient(135deg, #f8fafc, #ffffff);
+            border-radius: 16px;
+            padding: 25px;
+            margin-bottom: 25px;
+            border: 1px solid rgba(102, 126, 234, 0.1);
+            transition: all 0.3s ease;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .supplier-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 4px;
+            height: 100%;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+        }
+
+        .supplier-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.15);
+            border-color: rgba(102, 126, 234, 0.3);
+        }
+
+        .supplier-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 20px;
+        }
+
+        .supplier-name {
+            font-size: 1.4em;
+            font-weight: 700;
+            color: #1a1a1a;
+            margin-bottom: 5px;
+        }
+
+        .trust-score {
+            background: linear-gradient(135deg, #10b981, #059669);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 0.85em;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);
+        }
+
+        .supplier-info {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+            padding: 15px;
+            background: rgba(102, 126, 234, 0.05);
+            border-radius: 12px;
+        }
+
+        .info-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.9em;
+            color: #4b5563;
+            font-weight: 500;
+        }
+
+        .reviews-section {
+            margin-bottom: 20px;
+            padding: 15px;
+            background: rgba(251, 146, 60, 0.05);
+            border-radius: 12px;
+        }
+
+        .reviews-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .review-item {
+            background: white;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 8px;
+            border-left: 3px solid #fb923c;
+        }
+
+        .review-author {
+            font-weight: 600;
+            color: #1a1a1a;
+            font-size: 0.9em;
+        }
+
+        .review-rating {
+            color: #fbbf24;
+            margin: 2px 0;
+        }
+
+        .review-text {
+            color: #6b7280;
+            font-size: 0.85em;
+            line-height: 1.4;
+        }
+
+        .products-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 18px;
+            margin-top: 20px;
+        }
+
+        .product-card {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.08);
+            border: 1px solid rgba(0, 0, 0, 0.05);
+            transition: all 0.3s ease;
+        }
+
+        .product-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.12);
+        }
+
+        .product-name {
+            font-weight: 700;
+            margin-bottom: 10px;
+            color: #1a1a1a;
+            font-size: 1.1em;
+        }
+
+        .product-price {
+            color: #dc2626;
+            font-weight: 800;
+            font-size: 1.3em;
+            margin-bottom: 15px;
+        }
+
+        .quantity-controls {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            margin-bottom: 15px;
+        }
+
+        .quantity-btn {
+            background: #667eea;
+            color: white;
+            border: none;
+            width: 35px;
+            height: 35px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+        }
+
+        .quantity-btn:hover {
+            background: #5a6fd8;
+            transform: scale(1.1);
+        }
+
+        .quantity-input {
+            width: 60px;
+            text-align: center;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 8px;
+            font-weight: 600;
+            font-size: 16px;
+        }
+
+        .add-to-cart-btn {
+            width: 100%;
+            background: linear-gradient(135deg, #10b981, #059669);
+            color: white;
+            border: none;
+            padding: 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 700;
+            font-size: 0.95em;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);
+        }
+
+        .add-to-cart-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(16, 185, 129, 0.4);
+        }
+
+        .map-sidebar {
+            background: rgba(255, 255, 255, 0.98);
+            backdrop-filter: blur(20px);
+            border-radius: 20px;
+            padding: 25px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            height: fit-content;
+            position: sticky;
+            top: 20px;
+        }
+
+        #map {
+            height: 400px;
+            border-radius: 12px;
+            margin-bottom: 25px;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+        }
+
+        .cart-section h3 {
+            color: #1a1a1a;
+            margin-bottom: 20px;
+            font-weight: 700;
+            font-size: 1.3em;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .cart-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px;
+            background: linear-gradient(135deg, #f8fafc, #ffffff);
+            border-radius: 12px;
+            margin-bottom: 12px;
+            border: 1px solid rgba(0, 0, 0, 0.05);
+            transition: all 0.3s ease;
+        }
+
+        .cart-item:hover {
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .cart-total {
+            background: linear-gradient(135deg, #1f2937, #374151);
+            color: white;
+            padding: 20px;
+            border-radius: 12px;
+            text-align: center;
+            margin: 20px 0;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+        }
+
+        .checkout-btn {
+            width: 100%;
+            background: linear-gradient(135deg, #dc2626, #b91c1c);
+            color: white;
+            border: none;
+            padding: 18px;
+            border-radius: 12px;
+            font-size: 1.1em;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 8px 25px rgba(220, 38, 38, 0.3);
+        }
+
+        .checkout-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 15px 35px rgba(220, 38, 38, 0.4);
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(5px);
+            overflow-y: auto;
+            padding: 20px 0;
+        }
+
+        .modal-content {
+            background: white;
+            margin: 0 auto;
+            padding: 40px;
+            border-radius: 20px;
+            width: 90%;
+            max-width: 600px;
+            box-shadow: 0 25px 80px rgba(0, 0, 0, 0.3);
+            position: relative;
+            min-height: fit-content;
+            max-height: calc(100vh - 40px);
+            overflow-y: auto;
+        }
+
+        .close {
+            color: #9ca3af;
+            position: absolute;
+            top: 20px;
+            right: 25px;
+            font-size: 30px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: color 0.3s ease;
+            z-index: 1001;
+        }
+
+        .close:hover {
+            color: #374151;
+        }
+
+        .form-group {
+            margin-bottom: 25px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #1f2937;
+            font-size: 0.95em;
+        }
+
+        .form-group input, .form-group textarea, .form-group select {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #e5e7eb;
+            border-radius: 12px;
+            font-size: 14px;
+            outline: none;
+            transition: border-color 0.3s ease;
+            background: #ffffff;
+        }
+
+        .form-group input:focus, .form-group textarea:focus, .form-group select:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .rating {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 15px;
+            justify-content: center;
+        }
+
+        .star {
+            font-size: 32px;
+            color: #d1d5db;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .star:hover, .star.active {
+            color: #fbbf24;
+            transform: scale(1.1);
+        }
+
+        @media (max-width: 1024px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+            
+            .controls-section {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            .filters {
+                justify-content: center;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 15px;
+            }
+            
+            .header h1 {
+                font-size: 2.2em;
+            }
+            
+            .auth-section {
+                flex-direction: column;
+                text-align: center;
+            }
+            
+            .supplier-info {
+                grid-template-columns: 1fr;
+            }
+            
+            .products-grid {
+                grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+                gap: 15px;
+            }
+            
+            .modal {
+                padding: 10px 0;
+            }
+            
+            .modal-content {
+                width: 95%;
+                padding: 30px 20px;
+                margin: 10px auto;
+            }
+        }
+
+        @media (max-height: 600px) {
+            .modal {
+                padding: 10px 0;
+            }
+            
+            .modal-content {
+                margin: 10px auto;
+                max-height: calc(100vh - 20px);
+            }
+        }
+
+        /* Custom scrollbar */
+        .suppliers-list::-webkit-scrollbar, .modal-content::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .suppliers-list::-webkit-scrollbar-track, .modal-content::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.05);
+            border-radius: 10px;
+        }
+
+        .suppliers-list::-webkit-scrollbar-thumb, .modal-content::-webkit-scrollbar-thumb {
+            background: rgba(102, 126, 234, 0.3);
+            border-radius: 10px;
+        }
+
+        .suppliers-list::-webkit-scrollbar-thumb:hover, .modal-content::-webkit-scrollbar-thumb:hover {
+            background: rgba(102, 126, 234, 0.5);
+        }
+
+        /* Loading animation */
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: #ffffff;
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Success/Error messages */
+        .message {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 15px 25px;
+            border-radius: 12px;
+            color: white;
+            font-weight: 600;
+            z-index: 1001;
+            transform: translateX(400px);
+            transition: transform 0.3s ease;
+        }
+
+        .message.success {
+            background: linear-gradient(135deg, #10b981, #059669);
+        }
+
+        .message.error {
+            background: linear-gradient(135deg, #dc2626, #b91c1c);
+        }
+
+        .message.show {
+            transform: translateX(0);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1><i class="fas fa-store"></i> VendorConnect</h1>
+            <div class="auth-section">
+                <div class="user-info">
+                    <div class="location-info" id="locationInfo">
+                        <i class="fas fa-map-marker-alt"></i>
+                        <span>Getting location...</span>
+                    </div>
+                    <div id="userProfile">
+                        <span id="userName">Guest</span>
+                        <button class="btn" onclick="showLoginModal()" id="authBtn">
+                            <i class="fas fa-sign-in-alt"></i>
+                            Login
+                        </button>
+                    </div>
+                </div>
+                <button class="btn" onclick="redirectToOrderHistory()">
+                    <i class="fas fa-history"></i>
+                    Order History
+                </button>
+            </div>
+        </div>
+
+        <div class="search-section">
+            <div class="search-container">
+                <input type="text" class="search-box" id="searchBox" placeholder="Search for products, suppliers..." oninput="filterProducts()">
+                <i class="fas fa-search search-icon"></i>
+            </div>
+            
+            <div class="controls-section">
+                <div class="filters">
+                    <button class="filter-btn active" onclick="filterByCategory('')">All</button>
+                    <button class="filter-btn" onclick="filterByCategory('vegetables')">Vegetables</button>
+                    <button class="filter-btn" onclick="filterByCategory('fruits')">Fruits</button>
+                    <button class="filter-btn" onclick="filterByCategory('grains')">Grains</button>
+                    <button class="filter-btn" onclick="filterByCategory('dairy')">Dairy</button>
+                </div>
+                
+                <div class="sorting-controls">
+                    <label for="sortSelect" style="font-weight: 600; color: #4b5563;">Sort by:</label>
+                    <select id="sortSelect" class="sort-select" onchange="sortSuppliers()">
+                        <option value="distance">Nearest First</option>
+                        <option value="rating">Highest Rated</option>
+                        <option value="delivery">Lowest Delivery</option>
+                        <option value="name">Name A-Z</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <div class="main-content">
+            <div class="suppliers-list" id="suppliersList">
+                <!-- Suppliers will be loaded here -->
+            </div>
+
+            <div class="map-sidebar">
+                <div id="map"></div>
+                <div class="cart-section">
+                    <h3><i class="fas fa-shopping-cart"></i> Your Cart</h3>
+                    <div id="cartItems"></div>
+                    <div class="cart-total" id="cartTotal">
+                        <div>Total: ₹0</div>
+                        <div>Delivery: ₹0</div>
+                        <div><strong>Final Total: ₹0</strong></div>
+                    </div>
+                    <button class="checkout-btn" onclick="checkout()">
+                        <i class="fas fa-credit-card"></i>
+                        Checkout
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Login Modal -->
+    <div id="loginModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal('loginModal')">&times;</span>
+            <h2 style="margin-bottom: 30px; color: #1f2937; text-align: center;">Login to VendorConnect</h2>
+            <div class="form-group">
+                <label>Email:</label>
+                <input type="email" id="loginEmail" value="vendor@example.com">
+            </div>
+            <div class="form-group">
+                <label>Password:</label>
+                <input type="password" id="loginPassword" value="password123">
+            </div>
+            <button class="btn" onclick="login()" style="width: 100%; margin-bottom: 20px;">
+                <i class="fas fa-sign-in-alt"></i>
+                Login
+            </button>
+            <p style="text-align: center; color: #6b7280; font-size: 0.9em;">
+                Default credentials: vendor@example.com / password123
+            </p>
+        </div>
+    </div>
+
+    <!-- Review Modal -->
+    <div id="reviewModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal('reviewModal')">&times;</span>
+            <h2 style="margin-bottom: 30px; color: #1f2937; text-align: center;">Rate Supplier</h2>
+            <div class="form-group">
+                <label style="text-align: center; display: block;">Rating:</label>
+                <div class="rating" id="ratingStars">
+                    <span class="star" onclick="setRating(1)">⭐</span>
+                    <span class="star" onclick="setRating(2)">⭐</span>
+                    <span class="star" onclick="setRating(3)">⭐</span>
+                    <span class="star" onclick="setRating(4)">⭐</span>
+                    <span class="star" onclick="setRating(5)">⭐</span>
+                </div>
+            </div>
+            <div class="form-group">
+                <label>Review:</label>
+                <textarea id="reviewText" rows="4" placeholder="Share your experience with this supplier..."></textarea>
+            </div>
+            <button class="btn" onclick="submitReview()" style="width: 100%;">
+                <i class="fas fa-star"></i>
+                Submit Review
+            </button>
+        </div>
+    </div>
+
+    <!-- Checkout Modal -->
+    <div id="checkoutModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal('checkoutModal')">&times;</span>
+            <h2 style="margin-bottom: 30px; color: #1f2937; text-align: center;">Checkout</h2>
+            <div id="checkoutDetails"></div>
+            <div class="form-group">
+                <label>Delivery Address:</label>
+                <textarea id="deliveryAddress" rows="3" placeholder="Enter your delivery address..."></textarea>
+            </div>
+            <div class="form-group">
+                <label>Payment Method:</label>
+                <select id="paymentMethod">
+                    <option value="cod">Cash on Delivery</option>
+                    <option value="upi">UPI Payment</option>
+                    <option value="card">Credit/Debit Card</option>
+                </select>
+            </div>
+            <button class="btn" onclick="confirmOrder()" style="width: 100%;">
+                <i class="fas fa-check-circle"></i>
+                Confirm Order
+            </button>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
+    <script>
+        // Global variables
+        let map;
+        let userLocation = null;
+        let suppliers = [];
+        let cart = [];
+        let currentUser = null;
+        let orders = [];
+        let currentRating = 0;
+        let currentSupplierId = null;
+        let currentSortBy = 'distance';
+
+        // Enhanced sample data with more products across Chennai locations
+        const sampleSuppliers = [
+            {
+                id: 1,
+                name: "Fresh Farms Supply",
+                location: { lat: 13.0827, lng: 80.2707 },
+                distance: 1.2,
+                trustScore: 4.8,
+                reviews: 156,
+                deliveryCharge: 25,
+                address: "T.Nagar, Chennai",
+                established: "2019",
+                speciality: "Organic Vegetables",
+                products: [
+                    { id: 1, name: "Tomatoes", price: 40, category: "vegetables", unit: "kg", image: "🍅" },
+                    { id: 2, name: "Onions", price: 35, category: "vegetables", unit: "kg", image: "🧅" },
+                    { id: 3, name: "Potatoes", price: 30, category: "vegetables", unit: "kg", image: "🥔" },
+                    { id: 4, name: "Carrots", price: 45, category: "vegetables", unit: "kg", image: "🥕" },
+                    { id: 5, name: "Spinach", price: 25, category: "vegetables", unit: "bunch", image: "🥬" }
+                ],
+                reviewsList: [
+                    { author: "Priya S.", rating: 5, text: "Best quality vegetables in T.Nagar! Always fresh." },
+                    { author: "Raj K.", rating: 4, text: "Good service, timely delivery. Prices are reasonable." },
+                    { author: "Meera R.", rating: 5, text: "Been ordering for months. Consistently good quality." }
+                ]
+            },
+            {
+                id: 2,
+                name: "Organic Greens Hub",
+                location: { lat: 13.0878, lng: 80.2785 },
+                distance: 2.1,
+                trustScore: 4.6,
+                reviews: 89,
+                deliveryCharge: 35,
+                address: "Adyar, Chennai",
+                established: "2020",
+                speciality: "Leafy Greens & Herbs",
+                products: [
+                    { id: 6, name: "Lettuce", price: 20, category: "vegetables", unit: "piece", image: "🥬" },
+                    { id: 7, name: "Mint Leaves", price: 15, category: "vegetables", unit: "bunch", image: "🌿" },
+                    { id: 8, name: "Coriander", price: 12, category: "vegetables", unit: "bunch", image: "🌿" },
+                    { id: 9, name: "Curry Leaves", price: 10, category: "vegetables", unit: "bunch", image: "🍃" },
+                    { id: 10, name: "Green Chillies", price: 60, category: "vegetables", unit: "kg", image: "🌶️" }
+                ],
+                reviewsList: [
+                    { author: "Lakshmi V.", rating: 5, text: "Freshest herbs in Chennai! Great for cooking authentic dishes." },
+                    { author: "Arun M.", rating: 4, text: "Excellent quality greens. Delivery could be faster." }
+                ]
+            },
+            {
+                id: 3,
+                name: "Fruit Paradise",
+                location: { lat: 13.0758, lng: 80.2644 },
+                distance: 2.8,
+                trustScore: 4.9,
+                reviews: 203,
+                deliveryCharge: 40,
+                address: "Mylapore, Chennai",
+                established: "2018",
+                speciality: "Premium Fresh Fruits",
+                products: [
+                    { id: 11, name: "Bananas", price: 50, category: "fruits", unit: "dozen", image: "🍌" },
+                    { id: 12, name: "Apples", price: 120, category: "fruits", unit: "kg", image: "🍎" },
+                    { id: 13, name: "Oranges", price: 80, category: "fruits", unit: "kg", image: "🍊" },
+                    { id: 14, name: "Mangoes", price: 100, category: "fruits", unit: "kg", image: "🥭" },
+                    { id: 15, name: "Grapes", price: 90, category: "fruits", unit: "kg", image: "🍇" },
+                    { id: 16, name: "Papaya", price: 35, category: "fruits", unit: "kg", image: "🧡" }
+                ],
+                reviewsList: [
+                    { author: "Sunita R.", rating: 5, text: "Amazing fruit quality! Kids love the mangoes." },
+                    { author: "Venkat N.", rating: 5, text: "Best fruit vendor in Mylapore. Always sweet and fresh." },
+                    { author: "Kavitha S.", rating: 4, text: "Good variety and reasonable prices." }
+                ]
+            },
+            {
+                id: 4,
+                name: "Chennai Grains Store",
+                location: { lat: 13.0569, lng: 80.2091 },
+                distance: 3.2,
+                trustScore: 4.7,
+                reviews: 134,
+                deliveryCharge: 30,
+                address: "Guindy, Chennai",
+                established: "2017",
+                speciality: "Traditional Grains & Pulses",
+                products: [
+                    { id: 17, name: "Basmati Rice", price: 85, category: "grains", unit: "kg", image: "🍚" },
+                    { id: 18, name: "Wheat Flour", price: 45, category: "grains", unit: "kg", image: "🌾" },
+                    { id: 19, name: "Toor Dal", price: 95, category: "grains", unit: "kg", image: "🫘" },
+                    { id: 20, name: "Moong Dal", price: 110, category: "grains", unit: "kg", image: "🫘" },
+                    { id: 21, name: "Chana Dal", price: 90, category: "grains", unit: "kg", image: "🫘" },
+                    { id: 22, name: "Quinoa", price: 450, category: "grains", unit: "kg", image: "🌾" }
+                ],
+                reviewsList: [
+                    { author: "Radhika P.", rating: 5, text: "Best quality rice and dal. Traditional taste guaranteed!" },
+                    { author: "Sanjay L.", rating: 4, text: "Good prices for organic grains. Delivery is prompt." }
+                ]
+            },
+            {
+                id: 5,
+                name: "Pure Dairy Delights",
+                location: { lat: 13.1067, lng: 80.2102 },
+                distance: 4.1,
+                trustScore: 4.5,
+                reviews: 167,
+                deliveryCharge: 45,
+                address: "Anna Nagar, Chennai",
+                established: "2019",
+                speciality: "Fresh Dairy Products",
+                products: [
+                    { id: 23, name: "Fresh Milk", price: 55, category: "dairy", unit: "liter", image: "🥛" },
+                    { id: 24, name: "Curd", price: 50, category: "dairy", unit: "500g", image: "🫙" },
+                    { id: 25, name: "Paneer", price: 320, category: "dairy", unit: "kg", image: "🧀" },
+                    { id: 26, name: "Butter", price: 480, category: "dairy", unit: "kg", image: "🧈" },
+                    { id: 27, name: "Ghee", price: 550, category: "dairy", unit: "kg", image: "🫙" },
+                    { id: 28, name: "Buttermilk", price: 35, category: "dairy", unit: "liter", image: "🥛" }
+                ],
+                reviewsList: [
+                    { author: "Deepa K.", rating: 5, text: "Purest milk in Chennai! Kids love it." },
+                    { author: "Ramesh B.", rating: 4, text: "Good quality dairy products. Paneer is excellent." },
+                    { author: "Anitha M.", rating: 4, text: "Fresh products daily. Reliable supplier." }
+                ]
+            }
+        ];
+
+        // Data storage utilities
+        const DataStore = {
+            setItem(key, value) {
+                try {
+                    localStorage.setItem(key, JSON.stringify(value));
+                } catch (e) {
+                    // Fallback to window object for in-memory storage
+                    window[key] = value;
+                }
+            },
+            
+            getItem(key) {
+                try {
+                    const item = localStorage.getItem(key);
+                    return item ? JSON.parse(item) : null;
+                } catch (e) {
+                    // Fallback to window object
+                    return window[key] || null;
+                }
+            }
+        };
+
+        // Initialize the application
+        function initApp() {
+            loadUserSession();
+            loadSuppliers();
+            loadCartFromStorage();
+            loadOrdersFromStorage();
+            handleReorderItems();
+            displaySuppliers();
+            initMap();
+            getUserLocation();
+        }
+
+        // Save user session
+        function saveUserSession() {
+            DataStore.setItem('vendorConnect_user', currentUser);
+        }
+
+        // Load user session
+        function loadUserSession() {
+            currentUser = DataStore.getItem('vendorConnect_user');
+            if (currentUser) {
+                updateUserUI();
+            }
+        }
+
+        // Update user UI
+        function updateUserUI() {
+            if (currentUser) {
+                document.getElementById('userName').textContent = currentUser.name;
+                const authBtn = document.getElementById('authBtn');
+                authBtn.innerHTML = '<i class="fas fa-sign-out-alt"></i> Logout';
+                authBtn.onclick = logout;
+            }
+        }
+
+        // Get user's current location
+        function getUserLocation() {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(
+                    (position) => {
+                        userLocation = {
+                            lat: position.coords.latitude,
+                            lng: position.coords.longitude
+                        };
+                        updateLocationInfo();
+                        updateSupplierDistances();
+                        sortAndDisplaySuppliers();
+                        updateMapMarkers();
+                    },
+                    (error) => {
+                        console.log("Location access denied, using default location");
+                        userLocation = { lat: 13.0827, lng: 80.2707 };
+                        updateLocationInfo();
+                        updateSupplierDistances();
+                        sortAndDisplaySuppliers();
+                        updateMapMarkers();
+                    }
+                );
+            } else {
+                userLocation = { lat: 13.0827, lng: 80.2707 };
+                updateLocationInfo();
+                updateSupplierDistances();
+                sortAndDisplaySuppliers();
+                updateMapMarkers();
+            }
+        }
+
+        // Update location info display
+        function updateLocationInfo() {
+            const locationElement = document.getElementById('locationInfo');
+            if (userLocation) {
+                locationElement.innerHTML = `
+                    <i class="fas fa-map-marker-alt"></i>
+                    <span>Chennai, Tamil Nadu (${userLocation.lat.toFixed(4)}, ${userLocation.lng.toFixed(4)})</span>
+                `;
+            } else {
+                locationElement.innerHTML = `
+                    <i class="fas fa-map-marker-alt"></i>
+                    <span>Getting location...</span>
+                `;
+            }
+        }
+
+        // Calculate distance between two points
+        function calculateDistance(lat1, lng1, lat2, lng2) {
+            const R = 6371;
+            const dLat = (lat2 - lat1) * Math.PI / 180;
+            const dLng = (lng2 - lng1) * Math.PI / 180;
+            const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                Math.sin(dLng/2) * Math.sin(dLng/2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+            return R * c;
+        }
+
+        // Update supplier distances
+        function updateSupplierDistances() {
+            if (!userLocation) return;
+            
+            suppliers.forEach(supplier => {
+                supplier.distance = calculateDistance(
+                    userLocation.lat, userLocation.lng,
+                    supplier.location.lat, supplier.location.lng
+                );
+                supplier.deliveryCharge = Math.max(20, Math.round(supplier.distance * 15));
+            });
+        }
+
+        // Load suppliers data
+        function loadSuppliers() {
+            suppliers = [...sampleSuppliers];
+        }
+
+        // Sort suppliers
+        function sortSuppliers() {
+            const sortBy = document.getElementById('sortSelect').value;
+            currentSortBy = sortBy;
+            
+            suppliers.sort((a, b) => {
+                switch(sortBy) {
+                    case 'distance':
+                        return a.distance - b.distance;
+                    case 'rating':
+                        return b.trustScore - a.trustScore;
+                    case 'delivery':
+                        return a.deliveryCharge - b.deliveryCharge;
+                    case 'name':
+                        return a.name.localeCompare(b.name);
+                    default:
+                        return a.distance - b.distance;
+                }
+            });
+            
+            displaySuppliers();
+        }
+
+        // Sort and display suppliers
+        function sortAndDisplaySuppliers() {
+            sortSuppliers();
+        }
+
+        // Display suppliers
+        function displaySuppliers(filteredSuppliers = null) {
+            const suppliersToShow = filteredSuppliers || suppliers;
+            const container = document.getElementById('suppliersList');
+            
+            if (suppliersToShow.length === 0) {
+                container.innerHTML = `
+                    <div style="text-align: center; padding: 60px 20px; color: #6b7280;">
+                        <i class="fas fa-search" style="font-size: 4em; margin-bottom: 20px; opacity: 0.3;"></i>
+                        <h3 style="color: #374151; margin-bottom: 15px;">No suppliers found</h3>
+                        <p>Try adjusting your search or filters</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            container.innerHTML = suppliersToShow.map(supplier => `
+                <div class="supplier-card" data-supplier-id="${supplier.id}">
+                    <div class="supplier-header">
+                        <div>
+                            <div class="supplier-name">${supplier.name}</div>
+                            <div style="color: #6b7280; font-size: 0.9em; margin-bottom: 5px;">${supplier.speciality}</div>
+                        </div>
+                        <div class="trust-score">
+                            <i class="fas fa-star"></i>
+                            ${supplier.trustScore} (${supplier.reviews})
+                        </div>
+                    </div>
+                    
+                    <div class="supplier-info">
+                        <div class="info-item">
+                            <i class="fas fa-map-marker-alt"></i>
+                            ${supplier.distance ? supplier.distance.toFixed(1) + ' km' : 'Calculating...'}
+                        </div>
+                        <div class="info-item">
+                            <i class="fas fa-truck"></i>
+                            ₹${supplier.deliveryCharge} delivery
+                        </div>
+                        <div class="info-item">
+                            <i class="fas fa-calendar-alt"></i>
+                            Since ${supplier.established}
+                        </div>
+                        <div class="info-item">
+                            <i class="fas fa-map-pin"></i>
+                            ${supplier.address}
+                        </div>
+                    </div>
+
+                    <div class="reviews-section">
+                        <div class="reviews-header">
+                            <h4 style="color: #374151; font-size: 1em;">
+                                <i class="fas fa-comments"></i> Recent Reviews
+                            </h4>
+                            <button class="btn" onclick="showReviewModal(${supplier.id})" style="padding: 6px 12px; font-size: 0.8em;">
+                                <i class="fas fa-star"></i>
+                                Rate
+                            </button>
+                        </div>
+                        ${supplier.reviewsList.slice(0, 2).map(review => `
+                            <div class="review-item">
+                                <div class="review-author">${review.author}</div>
+                                <div class="review-rating">${'★'.repeat(review.rating)}${'☆'.repeat(5-review.rating)}</div>
+                                <div class="review-text">${review.text}</div>
+                            </div>
+                        `).join('')}
+                        ${supplier.reviewsList.length > 2 ? `
+                            <div style="text-align: center; margin-top: 10px;">
+                                <button onclick="showAllReviews(${supplier.id})" style="background: none; border: none; color: #667eea; font-size: 0.85em; cursor: pointer;">
+                                    View all ${supplier.reviewsList.length} reviews
+                                </button>
+                            </div>
+                        ` : ''}
+                    </div>
+                    
+                    <div class="products-grid">
+                        ${supplier.products.map(product => `
+                            <div class="product-card">
+                                <div style="font-size: 2em; text-align: center; margin-bottom: 10px;">${product.image}</div>
+                                <div class="product-name">${product.name}</div>
+                                <div class="product-price">₹${product.price}/${product.unit}</div>
+                                <div class="quantity-controls">
+                                    <button class="quantity-btn" onclick="changeQuantity(${product.id}, -1)">-</button>
+                                    <input type="number" class="quantity-input" id="qty-${product.id}" value="1" min="1">
+                                    <button class="quantity-btn" onclick="changeQuantity(${product.id}, 1)">+</button>
+                                </div>
+                                <button class="add-to-cart-btn" onclick="addToCart(${supplier.id}, ${product.id})">
+                                    <i class="fas fa-cart-plus"></i>
+                                    Add to Cart
+                                </button>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Show all reviews
+        function showAllReviews(supplierId) {
+            const supplier = suppliers.find(s => s.id === supplierId);
+            if (supplier) {
+                alert(`All Reviews for ${supplier.name}\n\n${supplier.reviewsList.map(r => `${r.author} - ${r.rating}/5 stars\n"${r.text}"`).join('\n\n')}`);
+            }
+        }
+
+        // Initialize map
+        function initMap() {
+            map = L.map('map').setView([13.0827, 80.2707], 12);
+            
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© OpenStreetMap contributors'
+            }).addTo(map);
+            
+            updateMapMarkers();
+        }
+
+        // Update map markers
+        function updateMapMarkers() {
+            if (!map) return;
+
+            map.eachLayer(layer => {
+                if (layer instanceof L.Marker) {
+                    map.removeLayer(layer);
+                }
+            });
+
+            if (userLocation) {
+                const userIcon = L.divIcon({
+                    html: '<i class="fas fa-user-circle" style="color: #dc2626; font-size: 24px;"></i>',
+                    iconSize: [24, 24],
+                    className: 'custom-div-icon'
+                });
+                
+                L.marker([userLocation.lat, userLocation.lng], {icon: userIcon})
+                    .addTo(map)
+                    .bindPopup('<b>Your Location</b>')
+                    .openPopup();
+                    
+                map.setView([userLocation.lat, userLocation.lng], 12);
+            }
+
+            suppliers.forEach(supplier => {
+                const supplierIcon = L.divIcon({
+                    html: '<i class="fas fa-store" style="color: #059669; font-size: 20px;"></i>',
+                    iconSize: [20, 20],
+                    className: 'custom-div-icon'
+                });
+                
+                L.marker([supplier.location.lat, supplier.location.lng], {icon: supplierIcon})
+                    .addTo(map)
+                    .bindPopup(`
+                        <div style="padding: 10px;">
+                            <b>${supplier.name}</b><br>
+                            <div style="margin: 5px 0;">${supplier.speciality}</div>
+                            ${supplier.distance ? `<div>Distance: ${supplier.distance.toFixed(1)} km</div>` : ''}
+                            <div>Trust Score: ⭐ ${supplier.trustScore}</div>
+                            <div>Delivery: ₹${supplier.deliveryCharge}</div>
+                        </div>
+                    `);
+            });
+        }
+
+        // Filter products
+        function filterProducts() {
+            const searchTerm = document.getElementById('searchBox').value.toLowerCase();
+            
+            if (!searchTerm.trim()) {
+                displaySuppliers();
+                return;
+            }
+            
+            const filteredSuppliers = suppliers.filter(supplier => {
+                const matchesSupplier = supplier.name.toLowerCase().includes(searchTerm) ||
+                                       supplier.speciality.toLowerCase().includes(searchTerm) ||
+                                       supplier.address.toLowerCase().includes(searchTerm);
+                const matchesProduct = supplier.products.some(product => 
+                    product.name.toLowerCase().includes(searchTerm)
+                );
+                return matchesSupplier || matchesProduct;
+            });
+
+            displaySuppliers(filteredSuppliers);
+        }
+
+        // Filter by category
+        function filterByCategory(category) {
+            document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+
+            if (!category) {
+                displaySuppliers();
+                return;
+            }
+
+            const filteredSuppliers = suppliers.filter(supplier => {
+                return supplier.products.some(product => product.category === category);
+            });
+
+            displaySuppliers(filteredSuppliers);
+        }
+
+        // Change quantity
+        function changeQuantity(productId, change) {
+            const input = document.getElementById(`qty-${productId}`);
+            if (input) {
+                const newValue = Math.max(1, parseInt(input.value || 1) + change);
+                input.value = newValue;
+            }
+        }
+
+        // Add to cart
+        function addToCart(supplierId, productId) {
+            const supplier = suppliers.find(s => s.id === supplierId);
+            const product = supplier.products.find(p => p.id === productId);
+            const quantityInput = document.getElementById(`qty-${productId}`);
+            const quantity = parseInt(quantityInput ? quantityInput.value : 1);
+
+            const existingItem = cart.find(item => item.productId === productId && item.supplierId === supplierId);
+            
+            if (existingItem) {
+                existingItem.quantity += quantity;
+            } else {
+                cart.push({
+                    productId,
+                    supplierId,
+                    productName: product.name,
+                    supplierName: supplier.name,
+                    price: product.price,
+                    unit: product.unit,
+                    quantity,
+                    deliveryCharge: supplier.deliveryCharge,
+                    image: product.image
+                });
+            }
+
+            updateCartDisplay();
+            saveCartToStorage();
+            
+            showMessage(`${product.name} added to cart!`, 'success');
+        }
+
+        // Show message
+        function showMessage(text, type) {
+            const message = document.createElement('div');
+            message.className = `message ${type}`;
+            message.textContent = text;
+            document.body.appendChild(message);
+            
+            setTimeout(() => message.classList.add('show'), 100);
+            setTimeout(() => {
+                message.classList.remove('show');
+                setTimeout(() => document.body.removeChild(message), 300);
+            }, 3000);
+        }
+
+        // Update cart display
+        function updateCartDisplay() {
+            const cartContainer = document.getElementById('cartItems');
+            const cartTotalContainer = document.getElementById('cartTotal');
+
+            if (cart.length === 0) {
+                cartContainer.innerHTML = '<p style="text-align: center; color: #6b7280; padding: 20px;">Your cart is empty</p>';
+                cartTotalContainer.innerHTML = `
+                    <div>Total: ₹0</div>
+                    <div>Delivery: ₹0</div>
+                    <div><strong>Final Total: ₹0</strong></div>
+                `;
+                return;
+            }
+
+            cartContainer.innerHTML = cart.map(item => `
+                <div class="cart-item">
+                    <div>
+                        <div style="font-weight: 600; color: #374151;">${item.productName}</div>
+                        <div style="font-size: 0.85em; color: #6b7280;">${item.supplierName} - ₹${item.price}/${item.unit}</div>
+                    </div>
+                    <div style="text-align: right;">
+                        <div style="font-weight: 600;">${item.quantity} × ₹${item.price} = ₹${item.quantity * item.price}</div>
+                        <button onclick="removeFromCart(${item.productId}, ${item.supplierId})" 
+                                style="margin-top: 5px; background: #dc2626; color: white; border: none; border-radius: 4px; padding: 2px 8px; font-size: 0.8em; cursor: pointer;">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+
+            const subtotal = cart.reduce((sum, item) => sum + (item.quantity * item.price), 0);
+            const deliveryCharges = [...new Set(cart.map(item => item.supplierId))]
+                .reduce((sum, supplierId) => {
+                    const supplier = suppliers.find(s => s.id === supplierId);
+                    return sum + (supplier ? supplier.deliveryCharge : 0);
+                }, 0);
+            const total = subtotal + deliveryCharges;
+
+            cartTotalContainer.innerHTML = `
+                <div>Subtotal: ₹${subtotal}</div>
+                <div>Delivery: ₹${deliveryCharges}</div>
+                <div><strong>Total: ₹${total}</strong></div>
+            `;
+        }
+
+        // Remove from cart
+        function removeFromCart(productId, supplierId) {
+            cart = cart.filter(item => !(item.productId === productId && item.supplierId === supplierId));
+            updateCartDisplay();
+            saveCartToStorage();
+            showMessage('Item removed from cart', 'success');
+        }
+
+        // Save cart to storage
+        function saveCartToStorage() {
+            DataStore.setItem('vendorConnect_cart', cart);
+        }
+
+        // Load cart from storage
+        function loadCartFromStorage() {
+            const savedCart = DataStore.getItem('vendorConnect_cart');
+            if (savedCart) {
+                cart = savedCart;
+            }
+            updateCartDisplay();
+        }
+
+        // Save orders to storage
+        function saveOrdersToStorage() {
+            DataStore.setItem('vendorConnect_orders', orders);
+        }
+
+        // Load orders from storage
+        function loadOrdersFromStorage() {
+            const savedOrders = DataStore.getItem('vendorConnect_orders');
+            if (savedOrders) {
+                orders = savedOrders;
+            }
+        }
+
+        // Show login modal
+        function showLoginModal() {
+            document.getElementById('loginModal').style.display = 'block';
+        }
+
+        // Close modal
+        function closeModal(modalId) {
+            document.getElementById(modalId).style.display = 'none';
+        }
+
+        // Login function
+        function login() {
+            const email = document.getElementById('loginEmail').value;
+            const password = document.getElementById('loginPassword').value;
+
+            if (email === 'vendor@example.com' && password === 'password123') {
+                currentUser = {
+                    id: 1,
+                    name: 'Street Vendor',
+                    email: email,
+                    phone: '+91 9876543210'
+                };
+                
+                saveUserSession();
+                updateUserUI();
+                
+                closeModal('loginModal');
+                showMessage('Login successful!', 'success');
+            } else {
+                showMessage('Invalid credentials. Use: vendor@example.com / password123', 'error');
+            }
+        }
+
+        // Logout function
+        function logout() {
+            currentUser = null;
+            DataStore.setItem('vendorConnect_user', null);
+            
+            document.getElementById('userName').textContent = 'Guest';
+            const authBtn = document.getElementById('authBtn');
+            authBtn.innerHTML = '<i class="fas fa-sign-in-alt"></i> Login';
+            authBtn.onclick = showLoginModal;
+            
+            showMessage('Logged out successfully!', 'success');
+        }
+
+        // Show review modal
+        function showReviewModal(supplierId) {
+            if (!currentUser) {
+                showMessage('Please login to rate suppliers', 'error');
+                return;
+            }
+            
+            currentSupplierId = supplierId;
+            document.getElementById('reviewModal').style.display = 'block';
+            resetRating();
+        }
+
+        // Set rating
+        function setRating(rating) {
+            currentRating = rating;
+            const stars = document.querySelectorAll('#ratingStars .star');
+            stars.forEach((star, index) => {
+                star.classList.toggle('active', index < rating);
+            });
+        }
+
+        // Reset rating
+        function resetRating() {
+            currentRating = 0;
+            document.querySelectorAll('#ratingStars .star').forEach(star => {
+                star.classList.remove('active');
+            });
+            document.getElementById('reviewText').value = '';
+        }
+
+        // Submit review
+        function submitReview() {
+            if (!currentRating) {
+                showMessage('Please select a rating', 'error');
+                return;
+            }
+
+            const reviewText = document.getElementById('reviewText').value.trim();
+            if (!reviewText) {
+                showMessage('Please write a review', 'error');
+                return;
+            }
+
+            const supplier = suppliers.find(s => s.id === currentSupplierId);
+            
+            if (supplier) {
+                // Add new review
+                const newReview = {
+                    author: currentUser.name,
+                    rating: currentRating,
+                    text: reviewText
+                };
+                
+                supplier.reviewsList.unshift(newReview);
+                
+                // Update trust score
+                const newReviewCount = supplier.reviews + 1;
+                const newTrustScore = ((supplier.trustScore * supplier.reviews) + currentRating) / newReviewCount;
+                
+                supplier.trustScore = Math.round(newTrustScore * 10) / 10;
+                supplier.reviews = newReviewCount;
+                
+                // Re-sort and display suppliers
+                sortAndDisplaySuppliers();
+                
+                closeModal('reviewModal');
+                showMessage('Review submitted successfully!', 'success');
+            }
+        }
+
+        // Checkout function
+        function checkout() {
+            if (!currentUser) {
+                showMessage('Please login to checkout', 'error');
+                return;
+            }
+
+            if (cart.length === 0) {
+                showMessage('Your cart is empty', 'error');
+                return;
+            }
+
+            const checkoutDetails = document.getElementById('checkoutDetails');
+            const subtotal = cart.reduce((sum, item) => sum + (item.quantity * item.price), 0);
+            const deliveryCharges = [...new Set(cart.map(item => item.supplierId))]
+                .reduce((sum, supplierId) => {
+                    const supplier = suppliers.find(s => s.id === supplierId);
+                    return sum + (supplier ? supplier.deliveryCharge : 0);
+                }, 0);
+            const total = subtotal + deliveryCharges;
+
+            checkoutDetails.innerHTML = `
+                <div style="background: #f8fafc; padding: 20px; border-radius: 12px; margin-bottom: 20px;">
+                    <h3 style="color: #374151; margin-bottom: 15px;">
+                        <i class="fas fa-receipt"></i> Order Summary
+                    </h3>
+                    ${cart.map(item => `
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 8px; padding: 8px; background: white; border-radius: 6px;">
+                            <span style="color: #374151;">
+                                ${item.productName} (${item.quantity} ${item.unit})
+                                <br><small style="color: #6b7280;">from ${item.supplierName}</small>
+                            </span>
+                            <span style="font-weight: 600; color: #dc2626;">₹${item.quantity * item.price}</span>
+                        </div>
+                    `).join('')}
+                    <hr style="margin: 15px 0; border: none; border-top: 1px solid #e5e7eb;">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                        <span>Subtotal:</span>
+                        <span>₹${subtotal}</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                        <span>Delivery Charges:</span>
+                        <span>₹${deliveryCharges}</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; font-weight: bold; font-size: 1.2em; color: #374151; border-top: 1px solid #e5e7eb; padding-top: 8px; margin-top: 8px;">
+                        <span>Total:</span>
+                        <span>₹${total}</span>
+                    </div>
+                </div>
+            `;
+
+            document.getElementById('checkoutModal').style.display = 'block';
+        }
+
+        // Confirm order
+        function confirmOrder() {
+            const deliveryAddress = document.getElementById('deliveryAddress').value.trim();
+            const paymentMethod = document.getElementById('paymentMethod').value;
+
+            if (!deliveryAddress) {
+                showMessage('Please enter delivery address', 'error');
+                return;
+            }
+
+            const orderId = 'ORD' + Date.now().toString().substr(-8);
+            const subtotal = cart.reduce((sum, item) => sum + (item.quantity * item.price), 0);
+            const deliveryCharges = [...new Set(cart.map(item => item.supplierId))]
+                .reduce((sum, supplierId) => {
+                    const supplier = suppliers.find(s => s.id === supplierId);
+                    return sum + (supplier ? supplier.deliveryCharge : 0);
+                }, 0);
+            const total = subtotal + deliveryCharges;
+
+            const order = {
+                id: orderId,
+                userId: currentUser.id,
+                items: [...cart],
+                subtotal,
+                deliveryCharges,
+                total,
+                deliveryAddress,
+                paymentMethod,
+                status: 'Confirmed',
+                timestamp: new Date().toLocaleString(),
+                estimatedDelivery: new Date(Date.now() + 2 * 60 * 60 * 1000).toLocaleString()
+            };
+
+            orders.unshift(order);
+            saveOrdersToStorage();
+
+            // Clear cart
+            cart = [];
+            updateCartDisplay();
+            saveCartToStorage();
+
+            closeModal('checkoutModal');
+            
+            showMessage(`Order confirmed! Order ID: ${orderId}`, 'success');
+            
+            setTimeout(() => {
+                alert(`Order Details:\n\nOrder ID: ${orderId}\nTotal: ₹${total}\nEstimated delivery: ${order.estimatedDelivery}\n\nThank you for your order!`);
+            }, 1000);
+        }
+
+        // Redirect to order history page
+        function redirectToOrderHistory() {
+            if (!currentUser) {
+                showMessage('Please login to view order history', 'error');
+                return;
+            }
+            
+            showMessage('Redirecting to order history...', 'success');
+            window.location.href = 'orders.html';
+        }
+
+        // Handle reorder items
+        function handleReorderItems() {
+            const reorderData = DataStore.getItem('vendorConnect_reorder');
+            if (reorderData) {
+                reorderData.forEach(item => {
+                    const existingItem = cart.find(cartItem => 
+                        cartItem.productId === item.productId && cartItem.supplierId === item.supplierId
+                    );
+                    
+                    if (existingItem) {
+                        existingItem.quantity += item.quantity;
+                    } else {
+                        cart.push(item);
+                    }
+                });
+                
+                updateCartDisplay();
+                saveCartToStorage();
+                DataStore.setItem('vendorConnect_reorder', null);
+                
+                showMessage(`${reorderData.length} items added to your cart from your previous order!`, 'success');
+            }
+        }
+
+        // Close modals when clicking outside
+        window.onclick = function(event) {
+            const modals = document.querySelectorAll('.modal');
+            modals.forEach(modal => {
+                if (event.target === modal) {
+                    modal.style.display = 'none';
+                }
+            });
+        }
+
+        // Initialize app when page loads
+        window.addEventListener('load', initApp);
+    </script>
+</body>
+</html>
