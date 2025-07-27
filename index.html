@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>VendorConnect - Street Vendor Marketplace</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet-routing-machine/3.2.12/leaflet-routing-machine.css" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
     <style>
         * {
@@ -431,6 +432,108 @@
             box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
         }
 
+        .map-controls {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+
+        .map-control-btn {
+            background: linear-gradient(135deg, #f59e0b, #d97706);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.85em;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(245, 158, 11, 0.3);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .map-control-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(245, 158, 11, 0.4);
+        }
+
+        .map-control-btn.active {
+            background: linear-gradient(135deg, #059669, #047857);
+            box-shadow: 0 4px 15px rgba(5, 150, 105, 0.3);
+        }
+
+        .route-info {
+            background: linear-gradient(135deg, #f0f9f0, #e8f5e8);
+            padding: 15px;
+            border-radius: 12px;
+            margin-bottom: 15px;
+            border: 1px solid rgba(16, 185, 129, 0.2);
+            display: none;
+        }
+
+        .route-info.show {
+            display: block;
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .route-details {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .route-distance {
+            font-weight: 700;
+            color: #059669;
+            font-size: 1.1em;
+        }
+
+        .route-time {
+            color: #6b7280;
+            font-weight: 600;
+            font-size: 0.9em;
+        }
+
+        .route-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .route-btn {
+            flex: 1;
+            background: linear-gradient(135deg, #059669, #047857);
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.8em;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
+        }
+
+        .route-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(5, 150, 105, 0.3);
+        }
+
+        .route-btn.clear {
+            background: linear-gradient(135deg, #dc2626, #b91c1c);
+        }
+
         .cart-section h3 {
             color: #1a1a1a;
             margin-bottom: 20px;
@@ -624,6 +727,10 @@
                 padding: 30px 20px;
                 margin: 10px auto;
             }
+
+            .map-controls {
+                justify-content: center;
+            }
         }
 
         @media (max-height: 600px) {
@@ -696,6 +803,28 @@
         .message.show {
             transform: translateX(0);
         }
+
+        /* Routing-specific styles */
+        .leaflet-routing-container {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .leaflet-routing-alternatives-container {
+            background: rgba(255, 255, 255, 0.9);
+        }
+
+        /* Pulse animation for active supplier */
+        .supplier-marker-active {
+            animation: markerPulse 2s infinite;
+        }
+
+        @keyframes markerPulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.2); }
+            100% { transform: scale(1); }
+        }
     </style>
 </head>
 <body>
@@ -756,6 +885,38 @@
             </div>
 
             <div class="map-sidebar">
+                <div class="map-controls">
+                    <button class="map-control-btn" id="toggleRoutingBtn" onclick="toggleRoutingMode()">
+                        <i class="fas fa-route"></i>
+                        Enable Routing
+                    </button>
+                    <button class="map-control-btn" onclick="clearAllRoutes()">
+                        <i class="fas fa-times"></i>
+                        Clear Routes
+                    </button>
+                </div>
+                
+                <div class="route-info" id="routeInfo">
+                    <div class="route-details">
+                        <div class="route-distance" id="routeDistance">-- km</div>
+                        <div class="route-time" id="routeTime">-- min</div>
+                    </div>
+                    <div style="margin-bottom: 10px; font-size: 0.9em; color: #6b7280;">
+                        <i class="fas fa-info-circle"></i>
+                        <span id="routeDestination">Route to supplier</span>
+                    </div>
+                    <div class="route-actions">
+                        <button class="route-btn" onclick="openInGoogleMaps()">
+                            <i class="fas fa-external-link-alt"></i>
+                            Google Maps
+                        </button>
+                        <button class="route-btn clear" onclick="clearCurrentRoute()">
+                            <i class="fas fa-times"></i>
+                            Clear
+                        </button>
+                    </div>
+                </div>
+
                 <div id="map"></div>
                 <div class="cart-section">
                     <h3><i class="fas fa-shopping-cart"></i> Your Cart</h3>
@@ -849,6 +1010,7 @@
     </div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet-routing-machine/3.2.12/leaflet-routing-machine.min.js"></script>
     <script>
         // Global variables
         let map;
@@ -860,6 +1022,11 @@
         let currentRating = 0;
         let currentSupplierId = null;
         let currentSortBy = 'distance';
+        let routingEnabled = false;
+        let currentRoute = null;
+        let currentRouteSupplier = null;
+        let supplierMarkers = {};
+        let userMarker = null;
 
         // Enhanced sample data with more products across Chennai locations
         const sampleSuppliers = [
@@ -1268,11 +1435,15 @@
         function updateMapMarkers() {
             if (!map) return;
 
-            map.eachLayer(layer => {
-                if (layer instanceof L.Marker) {
-                    map.removeLayer(layer);
-                }
+            // Clear existing markers
+            Object.values(supplierMarkers).forEach(marker => {
+                map.removeLayer(marker);
             });
+            supplierMarkers = {};
+
+            if (userMarker) {
+                map.removeLayer(userMarker);
+            }
 
             if (userLocation) {
                 const userIcon = L.divIcon({
@@ -1281,7 +1452,7 @@
                     className: 'custom-div-icon'
                 });
                 
-                L.marker([userLocation.lat, userLocation.lng], {icon: userIcon})
+                userMarker = L.marker([userLocation.lat, userLocation.lng], {icon: userIcon})
                     .addTo(map)
                     .bindPopup('<b>Your Location</b>')
                     .openPopup();
@@ -1296,7 +1467,7 @@
                     className: 'custom-div-icon'
                 });
                 
-                L.marker([supplier.location.lat, supplier.location.lng], {icon: supplierIcon})
+                const marker = L.marker([supplier.location.lat, supplier.location.lng], {icon: supplierIcon})
                     .addTo(map)
                     .bindPopup(`
                         <div style="padding: 10px;">
@@ -1305,9 +1476,182 @@
                             ${supplier.distance ? `<div>Distance: ${supplier.distance.toFixed(1)} km</div>` : ''}
                             <div>Trust Score: ⭐ ${supplier.trustScore}</div>
                             <div>Delivery: ₹${supplier.deliveryCharge}</div>
+                            <div style="margin-top: 10px;">
+                                <button onclick="showRouteToSupplier(${supplier.id})" 
+                                        style="background: #059669; color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 0.85em;">
+                                    <i class="fas fa-route"></i> Get Directions
+                                </button>
+                            </div>
                         </div>
                     `);
+
+                // Add click event for routing
+                marker.on('click', function() {
+                    if (routingEnabled) {
+                        showRouteToSupplier(supplier.id);
+                    }
+                });
+
+                supplierMarkers[supplier.id] = marker;
             });
+        }
+
+        // Toggle routing mode
+        function toggleRoutingMode() {
+            routingEnabled = !routingEnabled;
+            const btn = document.getElementById('toggleRoutingBtn');
+            
+            if (routingEnabled) {
+                btn.innerHTML = '<i class="fas fa-route"></i> Routing Active';
+                btn.classList.add('active');
+                showMessage('Routing enabled! Click on any supplier marker to get directions.', 'success');
+            } else {
+                btn.innerHTML = '<i class="fas fa-route"></i> Enable Routing';
+                btn.classList.remove('active');
+                clearAllRoutes();
+                showMessage('Routing disabled.', 'success');
+            }
+        }
+
+        // Show route to supplier
+        function showRouteToSupplier(supplierId) {
+            if (!userLocation) {
+                showMessage('Unable to get your location for routing', 'error');
+                return;
+            }
+
+            const supplier = suppliers.find(s => s.id === supplierId);
+            if (!supplier) return;
+
+            // Clear existing route
+            clearCurrentRoute();
+
+            // Create routing control
+            currentRoute = L.Routing.control({
+                waypoints: [
+                    L.latLng(userLocation.lat, userLocation.lng),
+                    L.latLng(supplier.location.lat, supplier.location.lng)
+                ],
+                routeWhileDragging: false,
+                addWaypoints: false,
+                createMarker: function() { return null; }, // Don't create additional markers
+                lineOptions: {
+                    styles: [
+                        {color: '#059669', weight: 6, opacity: 0.8},
+                        {color: '#10b981', weight: 4, opacity: 1}
+                    ]
+                },
+                show: false, // Don't show the default routing instructions panel
+                router: L.Routing.osrmv1({
+                    serviceUrl: 'https://router.project-osrm.org/route/v1'
+                })
+            }).addTo(map);
+
+            currentRouteSupplier = supplier;
+
+            // Listen for route found event
+            currentRoute.on('routesfound', function(e) {
+                const routes = e.routes;
+                const summary = routes[0].summary;
+                
+                // Update route info display
+                updateRouteInfo(supplier, summary);
+                
+                // Highlight the supplier marker
+                highlightSupplierMarker(supplierId);
+                
+                // Fit map to show the entire route
+                const routeBounds = L.latLngBounds([
+                    [userLocation.lat, userLocation.lng],
+                    [supplier.location.lat, supplier.location.lng]
+                ]);
+                map.fitBounds(routeBounds, { padding: [20, 20] });
+
+                showMessage(`Route to ${supplier.name} calculated!`, 'success');
+            });
+
+            // Handle routing errors
+            currentRoute.on('routingerror', function(e) {
+                console.error('Routing error:', e);
+                showMessage('Unable to calculate route. Please try again.', 'error');
+                clearCurrentRoute();
+            });
+        }
+
+        // Update route info display
+        function updateRouteInfo(supplier, summary) {
+            const distance = (summary.totalDistance / 1000).toFixed(1); // Convert to km
+            const time = Math.round(summary.totalTime / 60); // Convert to minutes
+            
+            document.getElementById('routeDistance').textContent = `${distance} km`;
+            document.getElementById('routeTime').textContent = `${time} min`;
+            document.getElementById('routeDestination').textContent = `Route to ${supplier.name}`;
+            
+            const routeInfo = document.getElementById('routeInfo');
+            routeInfo.classList.add('show');
+        }
+
+        // Highlight supplier marker
+        function highlightSupplierMarker(supplierId) {
+            // Reset all markers
+            Object.values(supplierMarkers).forEach(marker => {
+                const icon = marker.getElement();
+                if (icon) {
+                    icon.classList.remove('supplier-marker-active');
+                }
+            });
+
+            // Highlight selected marker
+            const selectedMarker = supplierMarkers[supplierId];
+            if (selectedMarker) {
+                const icon = selectedMarker.getElement();
+                if (icon) {
+                    icon.classList.add('supplier-marker-active');
+                }
+            }
+        }
+
+        // Clear current route
+        function clearCurrentRoute() {
+            if (currentRoute) {
+                map.removeControl(currentRoute);
+                currentRoute = null;
+                currentRouteSupplier = null;
+                
+                const routeInfo = document.getElementById('routeInfo');
+                routeInfo.classList.remove('show');
+                
+                // Remove highlight from all markers
+                Object.values(supplierMarkers).forEach(marker => {
+                    const icon = marker.getElement();
+                    if (icon) {
+                        icon.classList.remove('supplier-marker-active');
+                    }
+                });
+            }
+        }
+
+        // Clear all routes
+        function clearAllRoutes() {
+            clearCurrentRoute();
+            routingEnabled = false;
+            const btn = document.getElementById('toggleRoutingBtn');
+            btn.innerHTML = '<i class="fas fa-route"></i> Enable Routing';
+            btn.classList.remove('active');
+        }
+
+        // Open in Google Maps
+        function openInGoogleMaps() {
+            if (!currentRouteSupplier || !userLocation) {
+                showMessage('No active route to open in Google Maps', 'error');
+                return;
+            }
+
+            const supplier = currentRouteSupplier;
+            const googleMapsUrl = `https://www.google.com/maps/dir/${userLocation.lat},${userLocation.lng}/${supplier.location.lat},${supplier.location.lng}`;
+            
+            showMessage('Opening route in Google Maps...', 'success');
+            window.open(googleMapsUrl, '_blank');
         }
 
         // Filter products
@@ -1751,6 +2095,27 @@
 
         // Initialize app when page loads
         window.addEventListener('load', initApp);
+
+        // Add keyboard shortcuts for routing
+        window.addEventListener('keydown', (e) => {
+            if (e.ctrlKey || e.metaKey) {
+                switch(e.key) {
+                    case 'r':
+                        e.preventDefault();
+                        toggleRoutingMode();
+                        break;
+                    case 'c':
+                        e.preventDefault();
+                        clearAllRoutes();
+                        break;
+                }
+            }
+            
+            // ESC key to clear current route
+            if (e.key === 'Escape') {
+                clearCurrentRoute();
+            }
+        });
     </script>
 </body>
 </html>
